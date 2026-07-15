@@ -1,5 +1,5 @@
 import { generateResponse } from "../config/openRouter.js";
-import {User} from "../models/userModel.js"
+import { User } from "../models/userModel.js";
 import { Website } from "../models/websiteModel.js";
 import extractJson from "../utils/extractJson.js";
 
@@ -151,129 +151,110 @@ ABSOLUTE RULES
 - IF FORMAT IS BROKEN → RESPONSE IS INVALID
 `;
 
-export const generateWebsite=async(req, res)=>
-{
-    try 
-    {
-        const {prompt}=req.body
-        if(!prompt)
-        {
-            return res.status(400).json({message:"Prompt is required"})
-        }
-        const user=await User.findById(req.user._id)
-        if(!user)
-        {
-            return res.status(400).json({message:"User not found"})
-        }
-        if(user.credits < 10)
-        {
-            return res.status(400).json({
-                message:"You have not enough credits to generate a website"
-            })
-        }
-
-        const finalPrompt=masterPrompt.replace("{USER_PROMPT}", prompt)
-        let raw=""
-        let parsed=null
-
-        for(let i=0;i<2 && !parsed; i++)
-        {
-          raw=await generateResponse(finalPrompt)
-          parsed=await extractJson(raw)
-
-          if(!parsed)
-          {
-            raw=await generateResponse(finalPrompt + "\n\nRETURN ONLY RAW JSON")
-            parsed=await extractJson(raw)
-          }
-        }
-        if(!parsed.code)
-        {
-          return res.status(400).json({message:"AI returned invalid response"})
-        }
-
-        const website=await Website.create({
-          user:user._id,
-          title:prompt.slice(0,60),
-          latestCode:parsed.code,
-          conversation:[
-            {role:"user", content:prompt},
-            {role:"ai", content:parsed.message}
-          ]
-        })
-        user.credits=user.credits-10
-        await user.save()
-        return res.status(201).json({
-          websiteId:website._id,
-          remainingCredits:user.credits
-        })
-
-    } 
-    catch(error) 
-    {
-      return res.status(500).json({message:error.message})
+export const generateWebsite = async (req, res) => {
+  try {
+    const { prompt } = req.body;
+    if (!prompt) {
+      return res.status(400).json({ message: "Prompt is required" });
     }
-}
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(400).json({ message: "User not found" });
+    }
+    if (user.credits < 10) {
+      return res.status(400).json({
+        message: "You have not enough credits to generate a website",
+      });
+    }
 
-export const getAllWebsite=async(req, res)=>
-{
-  try 
-  {
-    const websites = await Website.find({ user: req.user._id })
-    return res.status(200).json(websites)
-  } 
-  catch(error) 
-  {
-    return res.status(500).json({message:error.message})
+    const finalPrompt = masterPrompt.replace("{USER_PROMPT}", prompt);
+    let raw = "";
+    let parsed = null;
+
+    for (let i = 0; i < 2 && !parsed; i++) {
+      raw = await generateResponse(finalPrompt);
+      parsed = await extractJson(raw);
+
+      if (!parsed) {
+        raw = await generateResponse(finalPrompt + "\n\nRETURN ONLY RAW JSON");
+        parsed = await extractJson(raw);
+      }
+    }
+    if (!parsed || !parsed.code) {
+      console.log("Raw AI Response:");
+      console.log(raw);
+
+      return res.status(400).json({
+        message: "AI returned invalid JSON response",
+      });
+    }
+
+    const website = await Website.create({
+      user: user._id,
+      title: prompt.slice(0, 60),
+      latestCode: parsed.code,
+      conversation: [
+        { role: "user", content: prompt },
+        { role: "ai", content: parsed.message },
+      ],
+    });
+    user.credits = user.credits - 10;
+    await user.save();
+    return res.status(201).json({
+      websiteId: website._id,
+      remainingCredits: user.credits,
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
   }
-}
+};
 
-export const getWebsiteById = async (req, res) => 
-{
-  try 
-  {
+export const getAllWebsite = async (req, res) => {
+  try {
+    const websites = await Website.find({ user: req.user._id });
+    return res.status(200).json(websites);
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+export const getWebsiteById = async (req, res) => {
+  try {
     const website = await Website.findOne({
       _id: req.params.id,
-      user: req.user._id
-    })
-    if (!website) 
-    {
-      return res.status(400).json({ message: "Website not found" })
+      user: req.user._id,
+    });
+    if (!website) {
+      return res.status(400).json({ message: "Website not found" });
     }
-    return res.status(200).json(website)
-  } 
-  catch(error) 
-  {
-    return res.status(500).json({ message: error.message })
+    return res.status(200).json(website);
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
   }
-}
+};
 
-export const changeWebsite = async (req, res) => 
-{
-  try 
-  {
-    const { prompt } = req.body
-    if (!prompt) 
-    {
-      return res.status(400).json({ message: "Prompt is required" })
+export const changeWebsite = async (req, res) => {
+  try {
+    const { prompt } = req.body;
+    if (!prompt) {
+      return res.status(400).json({ message: "Prompt is required" });
     }
     const website = await Website.findOne({
       _id: req.params.id,
-      user: req.user._id
-    })
-    if (!website) 
-    {
-      return res.status(400).json({ message: "Website not found" })
+      user: req.user._id,
+    });
+    if (!website) {
+      return res.status(400).json({ message: "Website not found" });
     }
-    const user = await User.findById(req.user._id)
-    if (!user) 
-    {
-      return res.status(400).json({ message: "User not found" })
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(400).json({ message: "User not found" });
     }
 
-    if (user.credits < 5) 
-    {
-      return res.status(400).json({ message: "You have not enough credits to generate a website" })
+    if (user.credits < 5) {
+      return res
+        .status(400)
+        .json({ message: "You have not enough credits to generate a website" });
     }
 
     const udpatePrompt = `
@@ -290,93 +271,87 @@ export const changeWebsite = async (req, res) =>
       "message":"Short confirmation",
       "code":"<UPDATE FULL HTML>"
     }
-    `
+    `;
 
-    let raw = ""
-    let parsed = null
-    for (let i = 0; i < 2 && !parsed; i++) 
-    {
-      raw = await generateResponse(udpatePrompt)
-      parsed = await extractJson(raw)
+    let raw = "";
+    let parsed = null;
+    for (let i = 0; i < 2 && !parsed; i++) {
+      raw = await generateResponse(udpatePrompt);
+      parsed = await extractJson(raw);
 
       if (!parsed) {
-        raw = await generateResponse(udpatePrompt + "\n\nRETURN ONLY RAW JSON")
-        parsed = await extractJson(raw)
+        raw = await generateResponse(udpatePrompt + "\n\nRETURN ONLY RAW JSON");
+        parsed = await extractJson(raw);
       }
     }
-    if (!parsed.code) 
-    {
-      return res.status(400).json({ message: "AI returned invalid response" })
+    if (!parsed || !parsed.code) {
+      console.log("Raw AI Response:");
+      console.log(raw);
+
+      return res.status(400).json({
+        message: "AI returned invalid JSON response",
+      });
     }
 
     website.conversation.push(
       { role: "user", content: prompt },
       { role: "ai", content: parsed.message },
-    )
+    );
 
-    website.latestCode = parsed.code
-    await website.save()
-    user.credits = user.credits - 5
-    await user.save()
+    website.latestCode = parsed.code;
+    await website.save();
+    user.credits = user.credits - 5;
+    await user.save();
     return res.status(200).json({
       message: parsed.message,
       code: parsed.code,
-      remainingCredits: user.credits
-    })
-  } 
-  catch(error) 
-  {
-    return res.status(500).json({ message: error.message })
+      remainingCredits: user.credits,
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
   }
-}
+};
 
-export const deployWebsite = async (req, res) => 
-{
-  try 
-  {
+export const deployWebsite = async (req, res) => {
+  try {
     const website = await Website.findOne({
       _id: req.params.id,
-      user: req.user._id
-    })
+      user: req.user._id,
+    });
 
-    if (!website) 
-    {
-      return res.status(400).json({ message: "Website not found" })
+    if (!website) {
+      return res.status(400).json({ message: "Website not found" });
     }
-    if (!website.slug) 
-    {
-      website.slug = website.title.toLowerCase().replace(/[^a-z0-9]/g,"").slice(0, 60) + website._id.toString().slice(-5)
+    if (!website.slug) {
+      website.slug =
+        website.title
+          .toLowerCase()
+          .replace(/[^a-z0-9]/g, "")
+          .slice(0, 60) + website._id.toString().slice(-5);
     }
 
-    website.deployed = true
-    website.deployUrl = `${process.env.FRONTEND_URL}/site/${website.slug}`
-    await website.save()
+    website.deployed = true;
+    website.deployUrl = `${process.env.FRONTEND_URL}/site/${website.slug}`;
+    await website.save();
 
     return res.status(200).json({
-      url: website.deployUrl
-    })
-  } 
-  catch(error) 
-  {
-    return res.status(500).json({ message: error.message })
+      url: website.deployUrl,
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
   }
-}
+};
 
-export const getBySlug = async (req, res) => 
-{
-  try 
-  {  
+export const getBySlug = async (req, res) => {
+  try {
     const website = await Website.findOne({
-      slug: req.params.slug
-    })
-    if (!website) 
-    {
-      return res.status(400).json({ message: "Website not found" })
+      slug: req.params.slug,
+    });
+    if (!website) {
+      return res.status(400).json({ message: "Website not found" });
     }
-    return res.status(200).json(website)
+    return res.status(200).json(website);
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
   }
-  catch(error) 
-  {
-    return res.status(500).json({ message: error.message })
-  }
-}
+};
