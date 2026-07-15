@@ -9,19 +9,20 @@ export const generateResponse=async(prompt)=>
     'Content-Type': 'application/json',
   },
   body: JSON.stringify({
-    model: 'deepseek/deepseek-chat-v3-0324',
-    messages: [
-      {
-        role:'system',
-        content:'You must return only valid raw json'
-      },
-      {
-        role: 'user',
-        content: prompt,
-      },
-    ],
-    temperature:0.2
-  }),
+  model: "deepseek/deepseek-chat-v3-0324",
+  messages: [
+    {
+      role: "system",
+      content: "You must return only valid raw json"
+    },
+    {
+      role: "user",
+      content: prompt
+    }
+  ],
+  temperature: 0.2,
+  max_tokens: 2500
+}),
 });
 
     if(!res.ok)
