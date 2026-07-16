@@ -1,8 +1,10 @@
 import Navbar from '../components/Navbar'
 import { motion } from "framer-motion"
 import { ArrowRight, Sparkles, Zap, LayoutTemplate, Download } from "lucide-react"
+import { useNavigate } from "react-router-dom";
 
 const Home = () => {
+   const navigate = useNavigate();
   return (
     <>
     <Navbar/>
@@ -65,7 +67,7 @@ const Home = () => {
           transition={{ delay: 0.3 }}
           className="flex flex-col sm:flex-row justify-center gap-4 mt-10"
         >
-          <button onClick={()=>navigate('/generate')} className="flex items-center justify-center gap-2 px-6 py-3 bg-indigo-500 hover:bg-indigo-600 rounded-xl font-semibold transition">
+          <button onClick={()=>navigate('/dashboard')} className="flex items-center justify-center gap-2 px-6 py-3 bg-indigo-500 hover:bg-indigo-600 rounded-xl font-semibold transition">
             Start Building
             <ArrowRight size={18} />
           </button>
