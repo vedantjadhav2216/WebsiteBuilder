@@ -1,5 +1,5 @@
 const openRouterUrl = 'https://openrouter.ai/api/v1/chat/completions'
-const model = 'deepseek/deepseek-v4-flash'
+const model = 'deepseek/deepseek-chat'
 
 export const generateResponse = async (prompt) => {
     const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
@@ -9,7 +9,7 @@ export const generateResponse = async (prompt) => {
             'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-            model: 'deepseek/deepseek-v4-flash',
+            model: 'deepseek/deepseek-chat',
             messages: [
                 {
                     role: 'system',
